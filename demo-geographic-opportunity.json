@@ -1,0 +1,20 @@
+{
+  "schema": "sg-geographic-opportunity-v1",
+  "demo": true,
+  "title": "DEMO: Community certificate workshop",
+  "category": "opportunity",
+  "location": {
+    "type": "latlon",
+    "latitude": 42.4,
+    "longitude": -82.2,
+    "mgrs": null,
+    "accuracyMeters": null,
+    "source": "manual-example"
+  },
+  "when": "2026-11-01T15:00:00-04:00",
+  "expiresAt": "2026-11-01T18:00:00-04:00",
+  "valueCAD": 0,
+  "directionDegrees": 90,
+  "trajectory": "illustrative-only",
+  "description": "Fictional example; not a real event or verified position."
+}

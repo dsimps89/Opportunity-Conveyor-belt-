@@ -9,7 +9,29 @@ function bearing(){let h=$('heading').value.trim();return h!==''?Number(h):headi
 function targetBearing(){if(!target||bearing()===null)return null;return ((bearing()+Math.atan(((target.x+target.w/2)/160-.5)*2*Math.tan(65*RAD/2))/RAD)%360+360)%360}
 function geoOffset(lat,lon){if(!origin)return null;const n=(lat-origin.lat)*111320,e=(lon-origin.lon)*111320*Math.cos(origin.lat*RAD);return {e,n}}
 function targetXY(){const b=targetBearing();return target?.range>0&&b!==null?{e:target.range*Math.sin(b*RAD),n:target.range*Math.cos(b*RAD)}:null}
-async function cameraStart(){try{if(stream)stream.getTracks().forEach(t=>t.stop());stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}}});video.srcObject=stream;await video.play();video.classList.remove('hidden');$('start').textContent='Camera on';log('camera','Started rear camera');insight()}catch(e){$('insightText').textContent='Camera permission/error: '+e.message}}
+async function cameraStart(){
+ const button=$('start');
+ if(stream && stream.getTracks().some(t=>t.readyState==='live')){
+  stream.getTracks().forEach(t=>t.stop());stream=null;video.pause();video.srcObject=null;video.classList.add('hidden');
+  button.textContent='Camera off';button.setAttribute('aria-pressed','false');window.dispatchEvent(new CustomEvent('sg-camera-state',{detail:{on:false,message:'Camera off · click to enable'}}));log('camera','Camera stopped');return;
+ }
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw Error('Camera requires HTTPS or localhost and a compatible browser');
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30},zoom:{ideal:1}}});
+  // Prefer an actual ultra-wide lens where the browser exposes one. Digital zoom cannot widen a standard lens.
+  try {
+   const devices=await navigator.mediaDevices.enumerateDevices();
+   const wide=devices.find(d=>d.kind==='videoinput'&&/ultra[ -]?wide|0\.5x|back ultra/i.test(d.label));
+   if(wide){const wider=await navigator.mediaDevices.getUserMedia({audio:false,video:{deviceId:{exact:wide.deviceId},width:{ideal:1920},height:{ideal:1080}}});stream.getTracks().forEach(t=>t.stop());stream=wider;}
+  }catch(e){/* Keep the working camera if lens switching is unsupported. */}
+  const track=stream.getVideoTracks()[0];try{const caps=track.getCapabilities?.();if(caps?.zoom?.min!==undefined)await track.applyConstraints({advanced:[{zoom:caps.zoom.min}]})}catch(e){}
+  video.srcObject=stream;video.muted=true;video.playsInline=true;await video.play();video.classList.remove('hidden');
+  button.textContent='Camera on · tap to turn off';button.setAttribute('aria-pressed','true');
+  window.dispatchEvent(new CustomEvent('sg-camera-state',{detail:{on:true,message:'Full frame · '+(track.label||'rear camera')+' · '+video.videoWidth+' × '+video.videoHeight}}));
+  stream.getVideoTracks().forEach(t=>t.addEventListener('ended',()=>{stream=null;button.textContent='Camera off';window.dispatchEvent(new CustomEvent('sg-camera-state',{detail:{on:false,message:'Camera disconnected'}}))},{once:true}));
+  log('camera','Started camera');insight();
+ }catch(e){stream=null;button.textContent='Camera off';button.setAttribute('aria-pressed','false');window.dispatchEvent(new CustomEvent('sg-camera-state',{detail:{on:false,message:'Camera unavailable: '+e.message}}));$('insightText').textContent='Camera permission/error: '+e.message}
+}
 $('start').onclick=cameraStart;
 function lock(){if(!stream||video.readyState<2){$('insightText').textContent='Start camera first.';return}const x=80,y=60;target={id:records.length+1,x:x-10,y:y-12,w:20,h:24,range:null,status:'LOCKED',created:new Date().toISOString(),observations:[],patch:null,miss:0};records.push(target);log('camera lock',`#${target.id} image centre; depth unknown`);insight()}
 $('lock').onclick=lock;$('release').onclick=()=>{if(target){log('release',`#${target.id}`);target.status='RELEASED';target=null;insight()}};

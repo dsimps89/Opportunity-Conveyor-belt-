@@ -9,13 +9,9 @@ function show(p){if(!p?.previewPng)return;packet=p;pic.src=p.previewPng;ghost.sr
 window.addEventListener('sg-v57-selection',e=>{show(e.detail?.objectPacket);setTimeout(()=>{if(old)old.style.display='none';if(oldTag)oldTag.style.display='none'},0)});
 const title=document.getElementById('cdTitle');title.addEventListener('input',()=>{if(packet)name.textContent=(title.value||'Selected object')+' · '+packet.cells+' cells · depth unknown'});
 function eventData(){const t=title.value.trim(),v=document.getElementById('cdValue').value;return {id:'track62-'+Date.now(),title:t||'Unlabelled camera object',category:document.getElementById('cdCategory').value,when:Date.now(),postedAt:Date.now(),expiresAt:Date.now()+Number(document.getElementById('cdExpiry').value)*3600000,value:v===''?null:Number(v),source:'camera-local-simulation',objectPacket:packet?{id:packet.id,cells:packet.cells,boundsPx:packet.boundsPx,physical:packet.physical}:null}}
-function track(e,register){hide();if(!packet)return;window.dispatchEvent(new Event('sg65-dispatched')); cancelAnimationFrame(animation);ghost.style.display='none';dot.style.display='none';ghost.style.opacity='1';const started=performance.now(),duration=3200;const label=e.title||'Selected object';function frame(now){const p=Math.min(1,(now-started)/duration),ease=p*p*(3-2*p);ghost.style.left='50%';ghost.style.top=(70-40*ease)+'%';ghost.style.width=(90*(1-ease)+12*ease)+'px';ghost.style.height=(90*(1-ease)+12*ease)+'px';ghost.style.opacity=String(1-.65*ease);dot.style.left='50%';dot.style.top=(70-40*ease)+'%';dot.style.opacity=String(.3+.7*ease);if(p<1)animation=requestAnimationFrame(frame);else{ghost.style.display='none';dot.style.display='none'}}animation=requestAnimationFrame(frame);
-log.innerHTML='';const strong=document.createElement('strong');strong.textContent='TRACK ENTRY · ';log.append(strong,document.createTextNode(label+' · '+packet.cells+' image cells · scan queued · physical depth unknown'));
-if(register){window.sgCamera55LocalPublish?.(e);window.sgWatchScanNow?.();window.SGLog?.('camera', 'LOCAL TRACK ENTRY '+label+' · '+packet.cells+' selected cells');log.append(document.createTextNode(' · saved to local feed for matching'))}}
-box.querySelector('#sg62send').onclick=()=>track(eventData(),true);
-// Local Preview is now a real local record rather than only a decorative animation.
-document.getElementById('cdPreview').addEventListener('click',()=>{if(!packet||!title.value.trim())return;setTimeout(()=>track(eventData(),true),0)});
-// Live dispatch already writes to local feed (or posts to the configured server).
-document.getElementById('cdLive').addEventListener('click',()=>{if(!packet||!title.value.trim())return;setTimeout(()=>{const cfg=window.sgCamera55FeedConfig?.();if(!cfg?.url)track(eventData(),false);else hide()},100)});
+// V66: The camera55 dispatch controller owns publication and animation.
+// Never create a second record or a second animation from this preview layer.
+box.querySelector('#sg62send').onclick=()=>{hide();document.getElementById('cdPreview').click()};
+window.addEventListener('sg65-dispatched',hide);
 window.addEventListener('sg-watch-results',e=>{const d=e.detail;if(!d)return;const matches=d.matches||[];const local=matches.filter(m=>String(m.id||'').startsWith('track62-')||String(m.id||'').startsWith('camera-'));const total=(d.total||0);const s=document.createElement('span');s.textContent=` · ${local.length} camera record match(es) / ${total} total records`;log.querySelector('.sg62result')?.remove();s.className='sg62result';log.append(s)});
 })();
