@@ -79,7 +79,7 @@ label(`GRID ${fmt(R/5)}/DIV`,20,702,'#a7e7bd');
 }else{
 label('GLOBE · LATITUDE / LONGITUDE (°)',330,190,'#b5dfdd');
 }
-if(previous){let shown=0;for(let j=0;j<NY;j+=2)for(let i=0;i<NX;i+=2){const val=motion[j*NX+i];if(val<17)continue;const angle=((i+.5)/NX-.5)*65*Math.PI/180,dist=.2+.58*(j+.5)/NY;const x=480+Math.sin(angle)*410*dist,y=480-Math.cos(angle)*240*dist;c.fillStyle=`rgba(93,231,230,${clamp(val/65,.12,.65)})`;c.fillRect(x-2,y-2,4,4);shown++}if(shown)label('IMAGE MOTION · DEPTH UNKNOWN',515,260,'#75d9df')}
+if(previous && window.sg70EvidenceMode!=='object'){let shown=0;for(let j=0;j<NY;j+=2)for(let i=0;i<NX;i+=2){const val=motion[j*NX+i];if(val<17)continue;const angle=((i+.5)/NX-.5)*65*Math.PI/180,dist=.2+.58*(j+.5)/NY;const x=480+Math.sin(angle)*410*dist,y=480-Math.cos(angle)*240*dist;c.fillStyle=`rgba(93,231,230,${clamp(val/65,.12,.65)})`;c.fillRect(x-2,y-2,4,4);shown++}if(shown)label('IMAGE MOTION · DEPTH UNKNOWN',515,260,'#75d9df')}
 if(selected){const ang=((selected.i+.5)/NX-.5)*65*Math.PI/180,dist=.2+.58*(selected.j+.5)/NY,x=480+Math.sin(ang)*410*dist,y=480-Math.cos(ang)*240*dist;c.strokeStyle='#f6ec8b';c.lineWidth=2;c.beginPath();c.arc(x,y,12,0,Math.PI*2);c.stroke();label('SELECTED · RANGE UNKNOWN',x+15,y-10,'#f6ec8b')}
 // Collision-aware labels: avoid stacking numbers on top of each other.
 const placed=[];for(const l of labels){c.font='12px system-ui';const width=c.measureText(l.s).width+6;if(placed.some(p=>Math.abs(p.y-l.y)<19&&l.x<p.x+p.w+7&&l.x+width>p.x))continue;placed.push({x:l.x,y:l.y,w:width});txt(l.s,l.x,l.y,l.color)}
